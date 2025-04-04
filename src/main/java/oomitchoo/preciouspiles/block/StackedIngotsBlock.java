@@ -144,9 +144,13 @@ public class StackedIngotsBlock extends Block {
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         BlockState blockBelow = level.getBlockState(pos.below());
-        return blockBelow.isFaceSturdy(level, pos.below(), Direction.UP);
-        //todo: Sollte auch surviven, wenn der Block darunter ebenfalls ein StackedIngotsBlock ist (so ein check wie blockBelow.getBlock() == this)
-        //todo: Problem: Es sollte ein vollständige StackedIngotBlock sein.
+        if (blockBelow.isFaceSturdy(level, pos.below(), Direction.UP)) {
+            return true;
+        } else if (blockBelow.getBlock() instanceof StackedIngotsBlock) {
+            return blockBelow.getValue(DOWN_FILLED) && blockBelow.getValue(INGOTS_AT_NW) && blockBelow.getValue(INGOTS_AT_NE) && blockBelow.getValue(INGOTS_AT_SE) && blockBelow.getValue(INGOTS_AT_SW);
+        } else {
+            return false;
+        }
     }
 
     @Override

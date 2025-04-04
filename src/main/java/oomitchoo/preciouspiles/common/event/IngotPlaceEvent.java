@@ -86,18 +86,26 @@ public class IngotPlaceEvent
             }
 
             //Last doing some checks before placing a new StackedIngotsBlock in world.
-            if (face == Direction.UP) { //if placed ON a sturdy block
+            if (face == Direction.UP) { //if placed ON a sturdy block or ON a full StackedIngotsBlock.
                 boolean sturdyFace = blockStateClicked.isFaceSturdy(level, posBlockClicked, face);
-                if (level.isEmptyBlock(posClickedRel) && sturdyFace)
-                {
+                if (level.isEmptyBlock(posClickedRel) && sturdyFace) {
+                    placeIngotsInWorld(level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
+                    event.setCanceled(true);
+                    return;
+                } else if (blockStateClicked.getBlock() instanceof StackedIngotsBlock && blockStateClicked.getValue(StackedIngotsBlock.DOWN_FILLED) && blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_NW) &&
+                        blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_NE) && blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_SE) && blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_SW)) {
                     placeIngotsInWorld(level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
                     event.setCanceled(true);
                     return;
                 }
-            } else {
+            } else { //if placed UNDER/BESIDES a block but with a sturdy face below - or a full StackedIngotsBlock below.
                 boolean sturdyFaceBelow = level.getBlockState(posClickedRel.below()).isFaceSturdy(level, posClickedRel.below(), Direction.UP);
-                if (level.isEmptyBlock(posClickedRel) && sturdyFaceBelow) //if placed UNDER/BESIDES a block but with a sturdy face below
-                {
+                if (level.isEmptyBlock(posClickedRel) && sturdyFaceBelow) {
+                    placeIngotsInWorld(level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
+                    event.setCanceled(true);
+                    return;
+                } else if (level.getBlockState(posClickedRel.below()).getBlock() instanceof StackedIngotsBlock && blockStateClicked.getValue(StackedIngotsBlock.DOWN_FILLED) && blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_NW) &&
+                        blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_NE) && blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_SE) && blockStateClicked.getValue(StackedIngotsBlock.INGOTS_AT_SW)) {
                     placeIngotsInWorld(level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
                     event.setCanceled(true);
                     return;
