@@ -1,0 +1,74 @@
+{
+  "multipart": [
+
+
+    {
+      "when": { "down_filled": "true" },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_slab" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "false"},{"ingots_at_ne": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_d_ne" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "false"},{"ingots_at_se": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_d_se" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "false"},{"ingots_at_sw": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_d_sw" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "false"},{"ingots_at_nw": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_d_nw" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "true"},{"ingots_at_ne": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_u_ne" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "true"},{"ingots_at_se": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_u_se" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "true"},{"ingots_at_sw": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_u_sw" }
+    },
+    {
+      "when": {
+        "AND": [
+          {"down_filled": "true"},{"ingots_at_nw": "true"}
+        ]
+      },
+      "apply": { "model": "preciouspiles:block/nether_bricks_stack_eight_u_nw" }
+    }
+  ]
+}
