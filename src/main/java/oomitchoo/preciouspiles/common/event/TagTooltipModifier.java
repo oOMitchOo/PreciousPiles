@@ -1,6 +1,5 @@
 package oomitchoo.preciouspiles.common.event;
 
-import net.minecraft.nbt.TextComponentTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;

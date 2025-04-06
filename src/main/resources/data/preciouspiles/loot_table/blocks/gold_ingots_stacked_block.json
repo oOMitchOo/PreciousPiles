@@ -6,7 +6,12 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:gold_ingot"
+          "name": "minecraft:gold_ingot",
+          "functions": [
+            {
+              "function": "preciouspiles:prec_piles_drop_count"
+            }
+          ]
         }
       ]
     }

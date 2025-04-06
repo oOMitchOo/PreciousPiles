@@ -2,12 +2,12 @@ package oomitchoo.preciouspiles;
 
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
-import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
+import net.neoforged.fml.loading.FMLEnvironment;
 import oomitchoo.preciouspiles.common.event.IngotPlaceEvent;
-import oomitchoo.preciouspiles.common.event.TagTooltipModifier;
 import oomitchoo.preciouspiles.block.ModBlocks;
+import oomitchoo.preciouspiles.common.event.PlacementHighlightEvent;
 import oomitchoo.preciouspiles.item.ModItems;
-import oomitchoo.preciouspiles.loot.IngotCountLootFunction;
+import oomitchoo.preciouspiles.loot.PrecPilesDropCountFunction;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -15,7 +15,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.CreativeModeTab;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -46,8 +45,8 @@ public class PreciousPiles
     public static final DeferredRegister<LootItemFunctionType<?>> LOOT_FUNCTION_TYPES =
             DeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, MODID);
 
-    public static final Supplier<LootItemFunctionType<IngotCountLootFunction>> INGOT_COUNT_LOOT_FCT_TYPE =
-            LOOT_FUNCTION_TYPES.register("ingot_count", () -> new LootItemFunctionType<>(IngotCountLootFunction.CODEC));
+    public static final Supplier<LootItemFunctionType<PrecPilesDropCountFunction>> PREC_PILES_LOOT_FCT =
+            LOOT_FUNCTION_TYPES.register("prec_piles_drop_count", () -> new LootItemFunctionType<>(PrecPilesDropCountFunction.CODEC));
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
@@ -62,8 +61,8 @@ public class PreciousPiles
         // Register the Deferred Register to the mod event bus so items get registered
         ModItems.register(modEventBus);
 
-        //todo: Eventuell muss ich doch meine eigene loot_function schreiben. Zur Zeit passe ich die Anzahl der drops etwas merkwürdig in der Block-Klasse an.
-        //LOOT_FUNCTION_TYPES.register(modEventBus);
+        // Eigene Loot_Function für meine Blöcke, womit in Abhängigkeit der BlockProperties entschieden wird, wie viele Items gedropt werden.
+        LOOT_FUNCTION_TYPES.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so tabs get registered
         //CREATIVE_MODE_TABS.register(modEventBus);
@@ -75,6 +74,13 @@ public class PreciousPiles
 
         // Event, dass bei sneak+right-click meinen ingot-stack block platziert.
         NeoForge.EVENT_BUS.register(IngotPlaceEvent.class);
+
+        /*
+        // Event, client-side, um Platzierungshilfen zu zeichnen. todo: Richtig zeichnen, wo der nächster Achter gesetzt wird.
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            NeoForge.EVENT_BUS.register(PlacementHighlightEvent.class);
+        }
+         */
 
         // DEBUG-TOOL um die tags eines Items anzeigen zu lassen
         //NeoForge.EVENT_BUS.register(TagTooltipModifier.class);

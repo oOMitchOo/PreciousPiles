@@ -6,7 +6,12 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:resin_brick"
+          "name": "minecraft:resin_brick",
+          "functions": [
+            {
+              "function": "preciouspiles:prec_piles_drop_count"
+            }
+          ]
         }
       ]
     }

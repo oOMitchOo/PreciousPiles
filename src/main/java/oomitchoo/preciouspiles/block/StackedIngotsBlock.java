@@ -2,32 +2,19 @@ package oomitchoo.preciouspiles.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class StackedIngotsBlock extends Block {
     public static final BooleanProperty DOWN_FILLED = BooleanProperty.create("down_filled");
@@ -53,7 +40,7 @@ public class StackedIngotsBlock extends Block {
 
     public StackedIngotsBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.defaultBlockState().setValue(DOWN_FILLED, false).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SE, false).setValue(INGOTS_AT_SW, false).setValue(INGOTS_AT_NW, true));
+        this.registerDefaultState(this.defaultBlockState().setValue(DOWN_FILLED, false).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SE, false).setValue(INGOTS_AT_SW, false).setValue(INGOTS_AT_NW, false));
     }
 
     @Override
@@ -62,60 +49,97 @@ public class StackedIngotsBlock extends Block {
     }
 
     public static boolean tryAddingEightIngots(BlockState oldState, LevelAccessor level, BlockPos pos) {
-        if (!oldState.getValue(INGOTS_AT_NW)) {
-            updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NW, true), level, pos, 3);
-        } else if (!oldState.getValue(INGOTS_AT_NE)) {
-            updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NE, true), level, pos, 3);
-        } else if (!oldState.getValue(INGOTS_AT_SE)) {
-            updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SE, true), level, pos, 3);
-        } else if (!oldState.getValue(INGOTS_AT_SW)) {
-            if (!oldState.getValue(DOWN_FILLED)) {
-                updateOrDestroy(oldState, oldState.setValue(DOWN_FILLED, true).setValue(INGOTS_AT_NW, false).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SE, false).setValue(INGOTS_AT_SW, false), level, pos, 3);
-            } else {
+        BlockState newState = oldState;
+        if(oldState.getValue(DOWN_FILLED)) {
+            if (!oldState.getValue(INGOTS_AT_NW)) {
+                updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NW, true), level, pos, 3);
+                return true;
+            } else if (!oldState.getValue(INGOTS_AT_NE)) {
+                updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NE, true), level, pos, 3);
+                return true;
+            } else if (!oldState.getValue(INGOTS_AT_SE)) {
+                updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SE, true), level, pos, 3);
+                return true;
+            } else if (!oldState.getValue(INGOTS_AT_SW)) {
                 updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SW, true), level, pos, 3);
+                return true;
             }
-        } else {
-            // Will only be reached when the block is already full of ingots.
             return false;
-        }
-        // true means eight ingots got added to the blockState.
-        return true;
-    }
-
-    @Override //todo: Sichergehen, dass diese Methode in Ordnung geht. Könnte schwierig sein, weil es eigentlich über loot_table geregelt sein soll.
-    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        if (this.drops.isEmpty()) {
-            return Collections.emptyList();
         } else {
-            LootParams lootparams = params.withParameter(LootContextParams.BLOCK_STATE, state).create(LootContextParamSets.BLOCK);
-            ServerLevel serverlevel = lootparams.getLevel();
-            LootTable loottable = serverlevel.getServer().reloadableRegistries().getLootTable((ResourceKey)this.drops.get());
-
-            List<ItemStack> drops = loottable.getRandomItems(lootparams);
-            List<ItemStack> adjustedDrops = new ArrayList<>();
-
-            for (ItemStack drop : drops) {
-                // Dynamisch die Anzahl der Eisenbarren basierend auf dem BlockState ändern
-                int amount = calculateDropAmount(state);  // Diese Methode berechnet die Menge dynamisch
-                ItemStack newDrop = drop.copy();
-                newDrop.setCount(amount);  // Setze die dynamische Anzahl
-                adjustedDrops.add(newDrop);
+            if (!oldState.getValue(INGOTS_AT_NW)) {
+                newState = oldState.setValue(INGOTS_AT_NW, true);
+            } else if (!oldState.getValue(INGOTS_AT_NE)) {
+                newState = oldState.setValue(INGOTS_AT_NE, true);
+            } else if (!oldState.getValue(INGOTS_AT_SE)) {
+                newState = oldState.setValue(INGOTS_AT_SE, true);
+            } else if (!oldState.getValue(INGOTS_AT_SW)) {
+                newState = oldState.setValue(INGOTS_AT_SW, true);
             }
 
-            return adjustedDrops;
+            if (newState.getValue(INGOTS_AT_NW) && newState.getValue(INGOTS_AT_NE) && newState.getValue(INGOTS_AT_SE) && newState.getValue(INGOTS_AT_SW)) {
+                updateOrDestroy(oldState, newState.setValue(DOWN_FILLED, true).setValue(INGOTS_AT_NW, false).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SE, false).setValue(INGOTS_AT_SW, false), level, pos, 3);
+            } else {
+                updateOrDestroy(oldState, newState, level, pos, 3);
+            }
+            return true;
         }
     }
 
-    //todo: Was passiert, wenn 0 zurückgegeben wird? Kommt MC damit klar?
-    private int calculateDropAmount(BlockState state) {
-        int amount = 0;
-        if(state.getValue(DOWN_FILLED)) amount = amount + 32;
-        if(state.getValue(INGOTS_AT_NW)) amount = amount + 8;
-        if(state.getValue(INGOTS_AT_NE)) amount = amount + 8;
-        if(state.getValue(INGOTS_AT_SE)) amount = amount + 8;
-        if(state.getValue(INGOTS_AT_SW)) amount = amount + 8;
-
-        return amount;
+    public static boolean tryAddingEightPrecise (boolean placingLow, boolean clickedWest, boolean clickedNorth, BlockState oldState, LevelAccessor level, BlockPos pos) {
+        if (placingLow && !oldState.getValue(DOWN_FILLED)) { // can only place low if lower half isn't filled yet
+            if (clickedWest) { // trying to place WEST
+                if (clickedNorth && !oldState.getValue(INGOTS_AT_NW)) { // trying to place WEST-NORTH
+                    if (oldState.getValue(INGOTS_AT_NE) && oldState.getValue(INGOTS_AT_SE) && oldState.getValue(INGOTS_AT_SW)) { // if all other corners are filled already it becomes a half-slab
+                        updateOrDestroy(oldState, oldState.setValue(DOWN_FILLED, true).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SE, false).setValue(INGOTS_AT_SW, false), level, pos, 3);
+                    } else {
+                        updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NW, true), level, pos, 3); // else only this one value gets updated.
+                    }
+                    return true;
+                } else if (!clickedNorth && !oldState.getValue(INGOTS_AT_SW)) { // trying to place WEST-SOUTH
+                    if (oldState.getValue(INGOTS_AT_NW) && oldState.getValue(INGOTS_AT_NE) && oldState.getValue(INGOTS_AT_SE)) { // if all other corners are filled already it becomes a half-slab
+                        updateOrDestroy(oldState, oldState.setValue(DOWN_FILLED, true).setValue(INGOTS_AT_NW, false).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SE, false), level, pos, 3);
+                    } else {
+                        updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SW, true), level, pos, 3); // else only this one value gets updated.
+                    }
+                    return true;
+                }
+            } else { // trying to place EAST
+                if (clickedNorth && !oldState.getValue(INGOTS_AT_NE)) { // trying to place EAST-NORTH
+                    if (oldState.getValue(INGOTS_AT_NW) && oldState.getValue(INGOTS_AT_SE) && oldState.getValue(INGOTS_AT_SW)) { // if all other corners are filled already it becomes a half-slab
+                        updateOrDestroy(oldState, oldState.setValue(DOWN_FILLED, true).setValue(INGOTS_AT_NW, false).setValue(INGOTS_AT_SE, false).setValue(INGOTS_AT_SW, false), level, pos, 3);
+                    } else {
+                        updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NE, true), level, pos, 3); // else only this one value gets updated.
+                    }
+                    return true;
+                } else if (!clickedNorth && !oldState.getValue(INGOTS_AT_SE)) { // trying to place EAST-SOUTH
+                    if (oldState.getValue(INGOTS_AT_NW) && oldState.getValue(INGOTS_AT_NE) && oldState.getValue(INGOTS_AT_SW)) { // if all other corners are filled already it becomes a half-slab
+                        updateOrDestroy(oldState, oldState.setValue(DOWN_FILLED, true).setValue(INGOTS_AT_NW, false).setValue(INGOTS_AT_NE, false).setValue(INGOTS_AT_SW, false), level, pos, 3);
+                    } else {
+                        updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SE, true), level, pos, 3); // else only this one value gets updated.
+                    }
+                    return true;
+                }
+            }
+        } else if (!placingLow && oldState.getValue(DOWN_FILLED)){ // can only place high if lower half is already filled.
+            if (clickedWest) { // trying to place WEST
+                if (clickedNorth && !oldState.getValue(INGOTS_AT_NW)) { // trying to place WEST-NORTH
+                    updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NW, true), level, pos, 3); // else only this one value gets updated.
+                    return true;
+                } else if (!clickedNorth && !oldState.getValue(INGOTS_AT_SW)) { // trying to place WEST-SOUTH
+                    updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SW, true), level, pos, 3); // else only this one value gets updated.
+                    return true;
+                }
+            } else { // trying to place EAST
+                if (clickedNorth && !oldState.getValue(INGOTS_AT_NE)) { // trying to place EAST-NORTH
+                    updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_NE, true), level, pos, 3); // else only this one value gets updated.
+                    return true;
+                } else if (!clickedNorth && !oldState.getValue(INGOTS_AT_SE)) { // trying to place EAST-SOUTH
+                    updateOrDestroy(oldState, oldState.setValue(INGOTS_AT_SE, true), level, pos, 3); // else only this one value gets updated.
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -141,7 +165,7 @@ public class StackedIngotsBlock extends Block {
         return direction == Direction.DOWN && !this.canSurvive(blockState, level, pos1) ? Blocks.AIR.defaultBlockState() : super.updateShape(blockState, level, scheduledTickAccess, pos1, direction, pos2, blockState2, randomSource);
     }
 
-    @Override
+    @Override // The StackedIngotsBlock can only survive on a sturdyFace or on a full StackedIngotsBlock
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         BlockState blockBelow = level.getBlockState(pos.below());
         if (blockBelow.isFaceSturdy(level, pos.below(), Direction.UP)) {
@@ -153,7 +177,7 @@ public class StackedIngotsBlock extends Block {
         }
     }
 
-    @Override
+    @Override // empty means no torches/buttons and so on can be placed on the block faces.
     protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
         return Shapes.empty();
     }

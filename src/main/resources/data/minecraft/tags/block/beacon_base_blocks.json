@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "preciouspiles:gold_ingots_stacked_block",
+    "preciouspiles:iron_ingots_stacked_block",
+    "preciouspiles:netherite_ingots_stacked_block"
+  ]
+}

@@ -6,7 +6,12 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:nether_brick"
+          "name": "minecraft:nether_brick",
+          "functions": [
+            {
+              "function": "preciouspiles:prec_piles_drop_count"
+            }
+          ]
         }
       ]
     }

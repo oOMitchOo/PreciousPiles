@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:copper_ingot",
+          "name": "minecraft:iron_ingot",
           "functions": [
             {
               "function": "preciouspiles:prec_piles_drop_count"

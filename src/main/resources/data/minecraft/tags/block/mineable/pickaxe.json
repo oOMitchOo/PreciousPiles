@@ -1,0 +1,33 @@
+{
+  "values": [
+    {
+      "id": "preciouspiles:bricks_stacked_block",
+      "required": false
+    },
+    {
+      "id": "preciouspiles:copper_ingots_stacked_block",
+      "required": false
+    },
+    {
+      "id": "preciouspiles:gold_ingots_stacked_block",
+      "required": false
+    },
+    {
+      "id": "preciouspiles:iron_ingots_stacked_block",
+      "required": false
+    },
+    {
+      "id": "preciouspiles:nether_bricks_stacked_block",
+      "required": false
+    },
+    {
+      "id": "preciouspiles:netherite_ingots_stacked_block",
+      "required": false
+    },
+    {
+      "id": "preciouspiles:resin_bricks_stacked_block",
+      "required": false
+    }
+  ],
+  "replace": false
+}
