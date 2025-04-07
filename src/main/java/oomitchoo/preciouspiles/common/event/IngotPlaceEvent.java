@@ -21,11 +21,24 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import oomitchoo.preciouspiles.block.ModBlocks;
 import oomitchoo.preciouspiles.block.StackedIngotsBlock;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 public class IngotPlaceEvent
 {
     public static final TagKey<Item> STACKABLE_TAG = TagKey.create(
             Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath("preciouspiles", "stackable_ingot")
+    );
+
+    private static final Map<Item, Supplier<Block>> ITEM_TO_BLOCK = Map.of(
+            Items.BRICK, ModBlocks.BRICKS_STACKED_BLOCK,
+            Items.COPPER_INGOT, ModBlocks.COPPER_INGOTS_STACKED_BLOCK,
+            Items.GOLD_INGOT, ModBlocks.GOLD_INGOTS_STACKED_BLOCK,
+            Items.IRON_INGOT, ModBlocks.IRON_INGOTS_STACKED_BLOCK,
+            Items.NETHER_BRICK, ModBlocks.NETHER_BRICKS_STACKED_BLOCK,
+            Items.NETHERITE_INGOT, ModBlocks.NETHERITE_INGOTS_STACKED_BLOCK,
+            Items.RESIN_BRICK, ModBlocks.RESIN_BRICKS_STACKED_BLOCK
     );
 
     @SubscribeEvent
@@ -38,28 +51,6 @@ public class IngotPlaceEvent
         if(player.isShiftKeyDown() && !heldItemStack.isEmpty() && heldItemStack.is(STACKABLE_TAG))
         {
             if (player.isCreative() || heldItemStack.getCount()>7) {
-                InteractionHand handHolding = event.getHand();
-                BlockPos posClicked = event.getPos();
-                BlockState blockStateClicked = level.getBlockState(posClicked);
-                Item heldItem = heldItemStack.getItem();
-                Block stackBlock;
-
-                if (heldItem == Items.BRICK) {
-                    stackBlock = ModBlocks.BRICKS_STACKED_BLOCK.get();
-                } else if (heldItem == Items.COPPER_INGOT) {
-                    stackBlock = ModBlocks.COPPER_INGOTS_STACKED_BLOCK.get();
-                } else if (heldItem == Items.GOLD_INGOT) {
-                    stackBlock = ModBlocks.GOLD_INGOTS_STACKED_BLOCK.get();
-                } else if (heldItem == Items.IRON_INGOT) {
-                    stackBlock = ModBlocks.IRON_INGOTS_STACKED_BLOCK.get();
-                } else if (heldItem == Items.NETHER_BRICK) {
-                    stackBlock = ModBlocks.NETHER_BRICKS_STACKED_BLOCK.get();
-                } else if (heldItem == Items.NETHERITE_INGOT) {
-                    stackBlock = ModBlocks.NETHERITE_INGOTS_STACKED_BLOCK.get();
-                } else { //Items.RESIN_BRICK
-                    stackBlock = ModBlocks.RESIN_BRICKS_STACKED_BLOCK.get();
-                }
-
                 Direction faceClicked = event.getFace();
                 if (faceClicked == null) { event.setCanceled(true); return; }
 
@@ -67,10 +58,14 @@ public class IngotPlaceEvent
                 double clicked_X = hitLocation.x;
                 double clicked_Y = hitLocation.y;
                 double clicked_Z = hitLocation.z;
+                double clickedBlockSpace_X = clicked_X - Math.floor(clicked_X);
+                double clickedBlockSpace_Y = clicked_Y - Math.floor(clicked_Y);
+                double clickedBlockSpace_Z = clicked_Z - Math.floor(clicked_Z);
 
-                double clickedBlockSpaceHeight_Y = clicked_Y - Math.floor(clicked_Y);
-                boolean clickedWest = clicked_X - Math.floor(clicked_X) < 0.5;
-                boolean clickedNorth = clicked_Z - Math.floor(clicked_Z) < 0.5;
+                boolean clickedWest = clickedBlockSpace_X < 0.5;
+                if(clickedBlockSpace_X == 0.5 && faceClicked == Direction.WEST) clickedWest = true; // Für's Setzen innerhalb eines StackedIngotsBlock
+                boolean clickedNorth = clickedBlockSpace_Z < 0.5;
+                if(clickedBlockSpace_Z == 0.5 && faceClicked == Direction.NORTH) clickedNorth = true; // Für's Setzen innerhalb eines StackedIngotsBlock
                 boolean clickedWestRel = clickedWest;
                 boolean clickedNorthRel = clickedNorth;
 
@@ -83,83 +78,68 @@ public class IngotPlaceEvent
                     }
                 }
 
+                InteractionHand handHolding = event.getHand();
+                BlockPos posClicked = event.getPos();
+                BlockState blockStateClicked = level.getBlockState(posClicked);
+                Item heldItem = heldItemStack.getItem();
+                Block stackBlock = ITEM_TO_BLOCK.getOrDefault(heldItem, ModBlocks.RESIN_BRICKS_STACKED_BLOCK).get();
                 BlockPos posClickedRel = event.getPos().relative(faceClicked);
                 BlockState blockStateRel = level.getBlockState(posClickedRel);
+                BlockPos posBelow = posClickedRel.below();
+                BlockState blockStateBelow = level.getBlockState(posBelow);
 
                 // todo: Aufräumen, damit es leserlich ist.
                 // Ich glaube schönstes verhalten ist: clickedAtModBlock --true--> tryPlacingPrecise --false--> tryFilling --isFull--> tryPlacingNewBlock (sturdyFace?) (beside/ontop/under)
                 //                                                          --false--> tryPlacingNewBlock (sturdyFace?) (beside/ontop/under)
                 if(blockStateClicked.getBlock() == stackBlock) { //clicking on ModBlock (stackBlock)?
-                    if(StackedIngotsBlock.tryAddingEightPrecise(clickedBlockSpaceHeight_Y < 0.5, clickedWest, clickedNorth, blockStateClicked, level, posClicked)) { // then try first to add 8 ingots preicse
+                    if(StackedIngotsBlock.tryAddingEightPrecise(clickedBlockSpace_Y < 0.5, clickedWest, clickedNorth, blockStateClicked, level, posClicked)) { // then try first to add 8 ingots preicse
                         placePilesBlockInWorld(clickedWest, clickedNorth, level, player, handHolding, heldItemStack, posClicked, stackBlock, true);
-                        event.setCanceled(true);
-                        return;
                     } else if(StackedIngotsBlock.tryAddingEightIngots(blockStateClicked, level, posClicked)) { // tryFilling ModBlock (stackBlock) instead
                         placePilesBlockInWorld(clickedWest, clickedNorth, level, player, handHolding, heldItemStack, posClicked, stackBlock, true);
-                        event.setCanceled(true);
-                        return;
                     } else { // ModBlock (stackBlock) is already a full precious piles block.
                         if (level.isEmptyBlock(posClickedRel)) { // then try placing a new block in the pos relative to the face clicked on.
-                            BlockState blockStateBelow = level.getBlockState(posClickedRel.below());
-                            if (blockStateBelow.isFaceSturdy(level, posClickedRel.below(), Direction.UP)) { // placing on sturdy face?
+                            if (blockStateBelow.isFaceSturdy(level, posBelow, Direction.UP)) { // placing on sturdy face?
                                 placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
-                                event.setCanceled(true);
-                                return;
-                            } else if (blockStateBelow.getBlock() instanceof StackedIngotsBlock && blockStateBelow.getValue(StackedIngotsBlock.DOWN_FILLED) && blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_NW) &&
-                                    blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_NE) && blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_SE) && blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_SW)) { // is there a full StackedIngotsBlock below?
+                            } else if (isFullStackedBlock(blockStateBelow)) { // is there a full StackedIngotsBlock below?
                                 placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
-                                event.setCanceled(true);
-                                return;
                             }
                         } else if (blockStateRel.getBlock() == stackBlock) { // couldn't add to clickedModBlock AND place a new StackedIngotsBlock in relative pos.
-                            if(StackedIngotsBlock.tryAddingEightPrecise(clickedBlockSpaceHeight_Y < 0.5, clickedWestRel, clickedNorthRel, blockStateRel, level, posClickedRel)) { // then try first to add 8 ingots preicse
+                            if(StackedIngotsBlock.tryAddingEightPrecise(clickedBlockSpace_Y < 0.5, clickedWestRel, clickedNorthRel, blockStateRel, level, posClickedRel)) { // then try first to add 8 ingots preicse
                                 placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, true);
-                                event.setCanceled(true);
-                                return;
                             } else if(StackedIngotsBlock.tryAddingEightIngots(blockStateRel, level, posClickedRel)) { // tryFilling ModBlock (stackBlock) instead
                                 placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, true);
-                                event.setCanceled(true);
-                                return;
-                            } else {
-                                event.setCanceled(true);
-                                return;
                             }
-                        } else {
-                            event.setCanceled(true);
-                            return;
                         }
                     }
                 } else {
                     if (level.isEmptyBlock(posClickedRel)) { // then try placing a new block in the pos relative to the face clicked on.
-                        BlockState blockStateBelow = level.getBlockState(posClickedRel.below());
-                        if (blockStateBelow.isFaceSturdy(level, posClickedRel.below(), Direction.UP)) { // placing on sturdy face?
+                        if (blockStateBelow.isFaceSturdy(level, posBelow, Direction.UP)) { // placing on sturdy face?
                             placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
-                            event.setCanceled(true);
-                            return;
-                        } else if (blockStateBelow.getBlock() instanceof StackedIngotsBlock && blockStateBelow.getValue(StackedIngotsBlock.DOWN_FILLED) && blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_NW) &&
-                                blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_NE) && blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_SE) && blockStateBelow.getValue(StackedIngotsBlock.INGOTS_AT_SW)) { // is there a full StackedIngotsBlock below?
+                        } else if (isFullStackedBlock(blockStateBelow)) { // is there a full StackedIngotsBlock below?
                             placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, false);
-                            event.setCanceled(true);
-                            return;
                         }
                     } else { // Couldn't place a new ModBlock. See if there already is a Modblock on that face to add to.
                         if(blockStateRel.getBlock() == stackBlock) {
-                            if(StackedIngotsBlock.tryAddingEightPrecise(clickedBlockSpaceHeight_Y < 0.5, clickedWestRel, clickedNorthRel, blockStateRel, level, posClickedRel)) { // then try first to add 8 ingots precise
+                            if(StackedIngotsBlock.tryAddingEightPrecise(clickedBlockSpace_Y < 0.5, clickedWestRel, clickedNorthRel, blockStateRel, level, posClickedRel)) { // then try first to add 8 ingots precise
                                 placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, true);
-                                event.setCanceled(true);
-                                return;
                             } else if (StackedIngotsBlock.tryAddingEightIngots(blockStateRel, level, posClickedRel)) { // try adding 8 ingots NOT precise
                                 placePilesBlockInWorld(clickedWestRel, clickedNorthRel, level, player, handHolding, heldItemStack, posClickedRel, stackBlock, true);
-                                event.setCanceled(true);
-                                return;
                             }
                         }
-                        event.setCanceled(true);
-                        return;
                     }
                 }
+                event.setCanceled(true);
             }
         }
+    }
+
+    private static boolean isFullStackedBlock(BlockState blockState) {
+        return blockState.getBlock() instanceof StackedIngotsBlock &&
+                blockState.getValue(StackedIngotsBlock.DOWN_FILLED) &&
+                blockState.getValue(StackedIngotsBlock.INGOTS_AT_NW) &&
+                blockState.getValue(StackedIngotsBlock.INGOTS_AT_NE) &&
+                blockState.getValue(StackedIngotsBlock.INGOTS_AT_SE) &&
+                blockState.getValue(StackedIngotsBlock.INGOTS_AT_SW);
     }
 
     private static void placePilesBlockInWorld(boolean clickedWest, boolean clickedNorth, Level level, Player player, InteractionHand hand, ItemStack heldItem, BlockPos placingPos, Block stackBlock, boolean addedToStackedBlock) {
